@@ -1,4 +1,4 @@
-name: Terraform Backend S3
+name: Step 1 -Terraform Backend S3
 
 on:
     workflow_dispatch:

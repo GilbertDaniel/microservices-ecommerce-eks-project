@@ -7,10 +7,10 @@ terraform {
     }
   }
   backend "s3" {
-    bucket         = "aws-eks-terraform-github-action-tf-state"
+    bucket         = "microservices-ecommerce-eks-cluster-terraform-state"
     region         = "us-east-1"
     key            = "eks/terraform.tfstate"
-    dynamodb_table = "Lock-Files"
+    dynamodb_table = "terraform-state-locks"
     encrypt        = true
   }
 }

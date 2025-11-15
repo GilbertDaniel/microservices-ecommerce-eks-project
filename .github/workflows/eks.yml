@@ -1,4 +1,4 @@
-name: Terraform Backend S3
+name: EKS Infrastructure
 
 on:
     workflow_dispatch:
@@ -8,39 +8,53 @@ on:
                 description: 'Terraform Action'
                 options:
                     - plan
+                    - apply
+                    - destroy
                 required: true
                 default: 'plan'
 
+env:
+    TF_VAR_region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
 jobs:
     terraform:
-        name: 'Terraform'
+        name: 'Terraform EKS'
         runs-on: ubuntu-latest
         
         defaults:
             run:
-                working-directory: ./infra/backend-s3
-                
+                working-directory: ./infra/eks
+        
         steps:
             - name: Checkout
               uses: actions/checkout@v4
-            
+
             - name: Setup Terraform
               uses: hashicorp/setup-terraform@v2
               with:
                   terraform_version: 1.8.4
-                
+
             - name: Configure AWS credentials
               uses: aws-actions/configure-aws-credentials@v4
               with:
                   aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
                   aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                  aws-region: us-east-1
-                
-            - name: Terraform Format
-              run: terraform fmt -check
-            
+                  aws-region: ${{ env.TF_VAR_region }}
+
             - name: Terraform Init
               run: terraform init
-            
+
+            - name: Terraform Validate
+              run: terraform validate
+
             - name: Terraform Plan
-              run: terraform plan -no-color
+              if: github.event.inputs.action == 'plan'
+              run: terraform plan
+
+            - name: Terraform Apply
+              if: github.event.inputs.action == 'apply'
+              run: terraform apply -auto-approve
+
+            - name: Terraform Destroy
+              if: github.event.inputs.action == 'destroy'
+              run: terraform destroy -auto-approve

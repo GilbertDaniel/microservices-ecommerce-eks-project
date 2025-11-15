@@ -24,7 +24,9 @@ resource "aws_subnet" "public-subnet1" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = var.subnet-name1
+    Name                                                   = var.subnet-name1
+    "kubernetes.io/role/elb"                               = "1"
+    "kubernetes.io/cluster/microservices-ecommerce-eks-cluster" = "shared"
   }
 }
 resource "aws_subnet" "public-subnet2" {
@@ -34,7 +36,9 @@ resource "aws_subnet" "public-subnet2" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = var.subnet-name2
+    Name                                                   = var.subnet-name2
+    "kubernetes.io/role/elb"                               = "1"
+    "kubernetes.io/cluster/microservices-ecommerce-eks-cluster" = "shared"
   }
 }
 

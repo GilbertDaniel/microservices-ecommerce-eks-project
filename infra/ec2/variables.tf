@@ -8,7 +8,7 @@ variable "region" {
 variable "vpc-name" {
   description = "VPC Name for our Jumphost server"
   type = string
-  default = "Jumphost-vpc"
+  default = "microservices-ecommerce-eks-vpc"
 }
 
 variable "igw-name" {
@@ -51,7 +51,7 @@ variable "rt-name" {
 variable "sg-name" {
   description = "Security Group for our Jumphost server"
   type = string
-  default = "Jumphost-sg"
+  default = "microservices-ecommerce-eks-sg"
 }
 
 

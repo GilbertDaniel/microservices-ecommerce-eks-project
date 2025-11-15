@@ -49,3 +49,8 @@ resource "aws_iam_role_policy_attachment" "iam_full_access" {
   role       = aws_iam_role.iam-role.name
   policy_arn = "arn:aws:iam::aws:policy/IAMFullAccess"
 }
+
+resource "aws_iam_role_policy_attachment" "ssm_managed_instance_core" {
+  role       = aws_iam_role.iam-role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}

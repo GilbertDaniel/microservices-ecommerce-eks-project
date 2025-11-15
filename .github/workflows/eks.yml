@@ -1,4 +1,4 @@
-name: Step 3 - Provision EKS Infrastructure
+name: Step 2 - Provision EKS Infrastructure
 
 on:
     workflow_dispatch:

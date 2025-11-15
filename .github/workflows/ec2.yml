@@ -1,4 +1,4 @@
-name: Step 2 - Deploy EC2 Infrastructure
+name: Step 1 - Deploy EC2 Infrastructure
 
 on:
     workflow_dispatch:

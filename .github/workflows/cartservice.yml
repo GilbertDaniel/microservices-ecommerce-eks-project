@@ -47,7 +47,7 @@ jobs:
                   docker container prune -f
 
             - name: Build Docker Image
-              working-directory: ./src/cartservice
+              working-directory: ./src/cartservice/src
               run: |
                   docker build -t ${{ env.IMAGE_NAME }} .
 

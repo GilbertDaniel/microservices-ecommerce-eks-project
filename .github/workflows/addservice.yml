@@ -68,8 +68,8 @@ jobs:
               env:
                   BUILD_NUMBER: ${{ github.run_number }}
               run: |
-                  git config user.email "${{ github.event.head_commit.author.email }}"
-                  git config user.name "${{ github.event.head_commit.author.name }}"
+                  git config --global user.email ${{vars.GIT_EMAIL}}
+                  git config --global user.name ${{vars.GIT_USERNAME}}
                   git add deployments/${{ env.YAML_FILE }}
                   git commit -m "Update ${{ env.IMAGE_NAME }} image to version $BUILD_NUMBER" || echo "No changes to commit"
                   git push https://${{ secrets.GH_PAT }}@github.com/${{ github.repository }} HEAD:main

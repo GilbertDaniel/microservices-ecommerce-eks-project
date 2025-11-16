@@ -6,7 +6,7 @@ on:
             - main
         paths:
             - 'src/adservice/**'
-            - 'deployments/adservice.yaml'
+            - 'deployments/adservice.yml'
     workflow_dispatch:
 
 env:
@@ -14,7 +14,7 @@ env:
     ECR_REGISTRY: 947985349339.dkr.ecr.us-east-1.amazonaws.com
     ECR_REPOSITORY: adservice
     IMAGE_NAME: adservice
-    YAML_FILE: adservice.yaml
+    YAML_FILE: adservice.yml
 
 jobs:
     build-and-deploy:
@@ -68,8 +68,8 @@ jobs:
               env:
                   BUILD_NUMBER: ${{ github.run_number }}
               run: |
-                  git config user.email "${{ github.actor }}@users.noreply.github.com"
-                  git config user.name "${{ github.actor }}"
+                  git config user.email "${{ github.event.head_commit.author.email }}"
+                  git config user.name "${{ github.event.head_commit.author.name }}"
                   git add deployments/${{ env.YAML_FILE }}
                   git commit -m "Update ${{ env.IMAGE_NAME }} image to version $BUILD_NUMBER" || echo "No changes to commit"
                   git push https://${{ secrets.GH_PAT }}@github.com/${{ github.repository }} HEAD:main

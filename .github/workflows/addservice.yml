@@ -6,6 +6,7 @@ on:
             - main
         paths:
             - 'src/adservice/**'
+            - 'deployments/adservice.yaml'
     workflow_dispatch:
 
 env:
@@ -56,4 +57,19 @@ jobs:
                   docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$BUILD_NUMBER
                   docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
 
-            
+            - name: Update Kubernetes Deployment File
+              env:
+                  BUILD_NUMBER: ${{ github.run_number }}
+              run: |
+                  cd deployments
+                  sed -i "s#image:.*#image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$BUILD_NUMBER#g" ${{ env.YAML_FILE }}
+
+            - name: Commit and Push Changes
+              env:
+                  BUILD_NUMBER: ${{ github.run_number }}
+              run: |
+                  git config user.email "${{ github.actor }}@users.noreply.github.com"
+                  git config user.name "${{ github.actor }}"
+                  git add deployments/${{ env.YAML_FILE }}
+                  git commit -m "Update ${{ env.IMAGE_NAME }} image to version $BUILD_NUMBER" || echo "No changes to commit"
+                  git push https://${{ secrets.GH_PAT }}@github.com/${{ github.repository }} HEAD:main

@@ -10,7 +10,7 @@ on:
 
 env:
     AWS_REGION: us-east-1
-    ECR_REGISTRY: 242201296943.dkr.ecr.us-east-1.amazonaws.com
+    ECR_REGISTRY: 947985349339.dkr.ecr.us-east-1.amazonaws.com
     ECR_REPOSITORY: adservice
     IMAGE_NAME: adservice
     YAML_FILE: adservice.yaml

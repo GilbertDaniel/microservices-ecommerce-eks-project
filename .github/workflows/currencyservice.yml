@@ -1,0 +1,78 @@
+name: CurrencyService CI/CD
+
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - 'src/currencyservice/**'
+            - 'deployments/currencyservice.yml'
+    workflow_dispatch:
+
+env:
+    AWS_REGION: us-east-1
+    ECR_REGISTRY: 947985349339.dkr.ecr.us-east-1.amazonaws.com
+    ECR_REPOSITORY: currencyservice
+    IMAGE_NAME: currencyservice
+    YAML_FILE: currencyservice.yml
+
+jobs:
+    build-and-deploy:
+        name: Build and Deploy CurrencyService
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                  aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                  aws-region: ${{ env.AWS_REGION }}
+
+            - name: Login to Amazon ECR
+              id: login-ecr
+              uses: aws-actions/amazon-ecr-login@v2
+
+            - name: Docker System Cleanup
+              run: |
+                  docker system prune -f
+                  docker container prune -f
+
+            - name: Build Docker Image
+              working-directory: ./src/currencyservice
+              run: |
+                  docker build -t ${{ env.IMAGE_NAME }} .
+
+            - name: Tag and Push Docker Image to ECR
+              env:
+                  BUILD_NUMBER: ${{ github.run_number }}
+              run: |
+                  docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$BUILD_NUMBER
+                  docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+                  docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$BUILD_NUMBER
+                  docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+
+            - name: Update Kubernetes Deployment File
+              env:
+                  BUILD_NUMBER: ${{ github.run_number }}
+              run: |
+                  cd deployments
+                  sed -i "s#image:.*#image: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:$BUILD_NUMBER#g" ${{ env.YAML_FILE }}
+
+            - name: Commit and Push Changes
+              env:
+                  BUILD_NUMBER: ${{ github.run_number }}
+              run: |
+                  git config --global user.email ${{vars.GIT_EMAIL}}
+                  git config --global user.name ${{vars.GIT_USERNAME}}
+                  git add deployments/${{ env.YAML_FILE }}
+                  git commit -m "Update ${{ env.IMAGE_NAME }} image to version $BUILD_NUMBER" || echo "No changes to commit"
+                  git push

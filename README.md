@@ -54,27 +54,179 @@ This project demonstrates a complete **DevOps implementation** of a microservice
 
 ## 🏗️ Architecture
 
-![Microservices Architecture](docs/images/architecture.png)
+### Microservices Architecture Diagram
 
-### Service Communication Flow
+```mermaid
+graph TB
+    subgraph "User Layer"
+        User[👤 User]
+        LoadGen[Load Generator<br/>Locust]
+    end
 
+    subgraph "Frontend Layer"
+        Frontend[Frontend Service<br/>Go - Port 8080<br/>HTTP Server]
+    end
+
+    subgraph "Backend Microservices"
+        Cart[Cart Service<br/>.NET - Port 7070]
+        Checkout[Checkout Service<br/>Go - Port 5050]
+        Product[Product Catalog<br/>Go - Port 3550]
+        Currency[Currency Service<br/>Node.js - Port 7000]
+        Payment[Payment Service<br/>Node.js - Port 50051]
+        Shipping[Shipping Service<br/>Go - Port 50051]
+        Email[Email Service<br/>Python - Port 8080]
+        Recommendation[Recommendation Service<br/>Python - Port 8080]
+        Ad[Ad Service<br/>Java - Port 9555]
+    end
+
+    subgraph "Data Layer"
+        Redis[(Redis Cache<br/>Session & Cart Data)]
+        ProductDB[(products.json)]
+    end
+
+    User -->|HTTP| Frontend
+    LoadGen -->|HTTP| Frontend
+    
+    Frontend -->|gRPC| Cart
+    Frontend -->|gRPC| Checkout
+    Frontend -->|gRPC| Product
+    Frontend -->|gRPC| Currency
+    Frontend -->|gRPC| Shipping
+    Frontend -->|gRPC| Recommendation
+    Frontend -->|gRPC| Ad
+    
+    Cart -->|TCP| Redis
+    
+    Checkout -->|gRPC| Cart
+    Checkout -->|gRPC| Product
+    Checkout -->|gRPC| Currency
+    Checkout -->|gRPC| Payment
+    Checkout -->|gRPC| Shipping
+    Checkout -->|gRPC| Email
+    
+    Recommendation -->|gRPC| Product
+    Product -->|Read| ProductDB
+
+    style User fill:#e1f5ff
+    style Frontend fill:#ff6b6b
+    style Checkout fill:#4ecdc4
+    style Cart fill:#45b7d1
+    style Redis fill:#96ceb4
+    style Product fill:#ffeaa7
+    style Currency fill:#dfe6e9
+    style Payment fill:#74b9ff
+    style Shipping fill:#a29bfe
+    style Email fill:#fd79a8
+    style Recommendation fill:#fdcb6e
+    style Ad fill:#6c5ce7
 ```
-User → Frontend (HTTP) → Multiple Backend Services (gRPC)
-                       ↓
-                   Cart Service → Redis Cache
-                       ↓
-              Checkout Service (Orchestrator)
-                 ↓     ↓     ↓
-         Payment  Currency  Shipping
-         Email    Product   Recommendation
+
+### CI/CD & Infrastructure Flow
+
+```mermaid
+graph LR
+    subgraph "Development"
+        Dev[👨‍💻 Developer]
+        GitHub[GitHub Repository]
+    end
+
+    subgraph "CI/CD Pipeline"
+        Actions[GitHub Actions]
+        Build[Docker Build]
+        ECR[AWS ECR<br/>Container Registry]
+    end
+
+    subgraph "GitOps"
+        ArgoCD[ArgoCD<br/>GitOps Engine]
+        K8sManifest[Kubernetes Manifests]
+    end
+
+    subgraph "AWS Cloud"
+        subgraph "VPC"
+            subgraph "EKS Cluster"
+                Pods[Microservices Pods]
+                Services[Kubernetes Services]
+            end
+            Jumphost[EC2 Jumphost]
+        end
+    end
+
+    subgraph "Monitoring"
+        Prometheus[Prometheus<br/>Metrics]
+        Grafana[Grafana<br/>Dashboards]
+    end
+
+    Dev -->|Push Code| GitHub
+    GitHub -->|Trigger| Actions
+    Actions -->|Build & Test| Build
+    Build -->|Push Image| ECR
+    Actions -->|Update Manifest| K8sManifest
+    K8sManifest -->|Detect Changes| ArgoCD
+    ArgoCD -->|Deploy| Pods
+    Pods -->|Expose| Services
+    Pods -->|Scrape Metrics| Prometheus
+    Prometheus -->|Visualize| Grafana
+    Jumphost -->|Manage| EKS
+
+    style Dev fill:#e1f5ff
+    style GitHub fill:#24292e
+    style Actions fill:#2088ff
+    style ECR fill:#ff9900
+    style ArgoCD fill:#ef7b4d
+    style Pods fill:#326ce5
+    style Prometheus fill:#e6522c
+    style Grafana fill:#f46800
 ```
 
-### High-Level Infrastructure
+### Infrastructure Architecture
 
-```
-GitHub → GitHub Actions → AWS ECR → ArgoCD → EKS Cluster
-                                        ↓
-                        Prometheus ← Microservices → Grafana
+```mermaid
+graph TB
+    subgraph "Terraform IaC"
+        TF[Terraform<br/>v1.8.4]
+        S3[S3 Backend<br/>State Storage]
+    end
+
+    subgraph "AWS Region: us-east-1"
+        subgraph "VPC 10.0.0.0/16"
+            subgraph "Public Subnets"
+                IGW[Internet Gateway]
+                NAT[NAT Gateway]
+                ALB[Application Load Balancer]
+            end
+            
+            subgraph "Private Subnets"
+                subgraph "EKS Cluster"
+                    ControlPlane[EKS Control Plane<br/>Managed by AWS]
+                    NodeGroup[Auto Scaling<br/>Worker Nodes]
+                end
+            end
+            
+            subgraph "Management Subnet"
+                EC2Jump[EC2 Jumphost<br/>kubectl, helm, awscli]
+            end
+        end
+    end
+
+    subgraph "External Services"
+        GitHub[GitHub Actions<br/>CI/CD]
+        ECR[AWS ECR<br/>Container Registry]
+    end
+
+    TF -->|Provision| VPC
+    TF -->|State| S3
+    GitHub -->|Build & Push| ECR
+    ECR -->|Pull Images| NodeGroup
+    EC2Jump -->|Manage| ControlPlane
+    IGW -->|Internet Access| ALB
+    ALB -->|Route Traffic| NodeGroup
+    NAT -->|Outbound Access| NodeGroup
+
+    style TF fill:#623ce4
+    style EKS fill:#ff9900
+    style GitHub fill:#24292e
+    style ECR fill:#ff9900
+    style NodeGroup fill:#326ce5
 ```
 
 ---
